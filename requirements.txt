@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+httpx
+motor
+python-dotenv
+passlib[bcrypt]
+python-jose
+requests

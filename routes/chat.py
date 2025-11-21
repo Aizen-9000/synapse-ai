@@ -1,39 +1,22 @@
-import json
-import requests
+# backend/routes/chat.py
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import StreamingResponse
+from backend.llm_adapter import llm
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
 
 @router.post("/")
 async def chat(payload: dict):
-    message = payload.get("message", "")
-    if not message:
+    prompt = payload.get("message", "")
+    if not prompt:
         raise HTTPException(status_code=400, detail="No message provided")
 
-    def stream_ollama():
-        try:
-            with requests.post(
-                "http://127.0.0.1:11434/api/generate",
-                json={"model": "llama3", "prompt": message},
-                stream=True,
-            ) as response:
-                if response.status_code != 200:
-                    yield json.dumps({"error": "Ollama API error"}) + "\n"
-                    return
+    model_name = payload.get("model")  # optional key from frontend
+    try:
+        print("Prompt received:", prompt)
+        grok_reply = await llm.generate(prompt, model=model_name)
+        print("GROK AI reply:", grok_reply)
+    except Exception as e:
+        print("Error calling GROK AI:", str(e))
+        raise HTTPException(status_code=500, detail=f"GROK AI error: {str(e)}")
 
-                for line in response.iter_lines():
-                    if not line:
-                        continue
-                    try:
-                        data = json.loads(line.decode("utf-8"))
-                        # ✅ Only send "response" parts (the text tokens)
-                        if "response" in data:
-                            yield json.dumps({"response": data["response"]}) + "\n"
-                    except json.JSONDecodeError:
-                        continue
-        except Exception as e:
-            yield json.dumps({"error": str(e)}) + "\n"
-
-    # ✅ Send as text stream
-    return StreamingResponse(stream_ollama(), media_type="text/event-stream")
+    return {"response": grok_reply}
