@@ -1,10 +1,10 @@
 import io
+from dotenv import load_dotenv
 import os
 from openai import OpenAI
 
+load_dotenv()  # ensures .env is loaded
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
-# Create OpenAI client
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 
@@ -14,7 +14,7 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 async def transcribe_audio_file(file_bytes: bytes) -> str:
     """
     Transcribe audio to text using OpenAI Whisper.
-    Works for Bengali, Hindi, all Indian languages.
+    Supports all languages Whisper can detect.
     """
     if not OPENAI_API_KEY:
         print("OPENAI_API_KEY missing")
@@ -23,7 +23,8 @@ async def transcribe_audio_file(file_bytes: bytes) -> str:
     try:
         audio_file = io.BytesIO(file_bytes)
 
-        result = client.audio.transcriptions.create(
+        # Use async create method
+        result = await client.audio.transcriptions.acreate(
             model="whisper-1",
             file=audio_file,
         )
@@ -33,7 +34,6 @@ async def transcribe_audio_file(file_bytes: bytes) -> str:
     except Exception as e:
         print("[STT ERROR]", e)
         return ""
-    
 
 
 # -----------------------------
@@ -43,21 +43,23 @@ async def synthesize_tts(text: str) -> bytes:
     """
     Convert text to speech using OpenAI TTS.
     Model: gpt-4o-mini-tts
-    Returns audio in MP3 bytes.
+    Returns MP3 bytes.
     """
     if not OPENAI_API_KEY:
         print("OPENAI_API_KEY missing")
         return b""
 
     try:
-        response = client.audio.speech.create(
+        # Use async create method
+        response = await client.audio.speech.acreate(
             model="gpt-4o-mini-tts",
             voice="alloy",      # natural and stable voice
             input=text,
             format="mp3"
         )
 
-        audio_bytes = response.read()  # binary MP3
+        # read() works for sync response; for async response, it should be .read()
+        audio_bytes = response.read()
         return audio_bytes
 
     except Exception as e:

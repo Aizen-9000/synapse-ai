@@ -100,11 +100,9 @@ async def translate_text(payload: dict = Body(...)):
 # ---------------------------
 @router.post("/stt")
 async def stt_endpoint(file: UploadFile = File(...)):
-    """
-    Accepts audio from frontend stt-service.js
-    """
     try:
-        text = await transcribe_audio_file(file)
+        file_bytes = await file.read()  # convert UploadFile to bytes
+        text = await transcribe_audio_file(file_bytes)
         return {"text": text}
     except Exception as e:
         print("STT error:", e)
@@ -116,24 +114,15 @@ async def stt_endpoint(file: UploadFile = File(...)):
 # ---------------------------
 @router.post("/tts")
 async def tts_endpoint(payload: dict = Body(...)):
-    """
-    payload:
-    {
-        "text": "...",
-        "lang": "hi" or "bn" or "en"
-    }
-    """
     text = payload.get("text")
-    lang = payload.get("lang", "en")
+    lang = payload.get("lang", "en")  # optional, default to "en"
 
     if not text:
         raise HTTPException(status_code=400, detail="No text provided")
 
     try:
-        audio_bytes = await synthesize_tts(text, lang)
-        return {
-            "audio": audio_bytes.hex()  # hex encode for JSON
-        }
+        audio_bytes = await synthesize_tts(text)  # <-- call stt_tts.py
+        return {"audio": audio_bytes.hex()}  # hex encode for JSON
     except Exception as e:
         print("TTS error:", e)
         raise HTTPException(status_code=500, detail=f"TTS error: {str(e)}")
