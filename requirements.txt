@@ -30,3 +30,4 @@ pydantic[email]
 PyJWT
 passlib[bcrypt]
 python-jose
+python-multipart
