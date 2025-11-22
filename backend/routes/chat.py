@@ -1,11 +1,10 @@
-# backend/routes/chat.py
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Body
 from backend.llm_adapter import llm
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
 
 @router.post("/")
-async def chat(payload: dict):
+async def chat(payload: dict = Body(...)):
     prompt = payload.get("message", "")
     if not prompt:
         raise HTTPException(status_code=400, detail="No message provided")
