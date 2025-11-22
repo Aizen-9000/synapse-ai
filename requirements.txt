@@ -31,3 +31,4 @@ PyJWT
 passlib[bcrypt]
 python-jose
 python-multipart
+aiohttp

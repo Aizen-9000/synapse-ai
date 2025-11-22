@@ -2,56 +2,64 @@ import io
 import os
 from openai import OpenAI
 
-# Load environment variables
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
+
+# Create OpenAI client
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 
+# -----------------------------
+# 1) SPEECH → TEXT (Whisper STT)
+# -----------------------------
 async def transcribe_audio_file(file_bytes: bytes) -> str:
     """
-    Transcribe audio using OpenAI Whisper API.
+    Transcribe audio to text using OpenAI Whisper.
+    Works for Bengali, Hindi, all Indian languages.
     """
     if not OPENAI_API_KEY:
+        print("OPENAI_API_KEY missing")
         return ""
 
     try:
-        client = OpenAI(api_key=OPENAI_API_KEY)
         audio_file = io.BytesIO(file_bytes)
 
-        resp = client.audio.transcriptions.create(
+        result = client.audio.transcriptions.create(
             model="whisper-1",
-            file=audio_file
+            file=audio_file,
         )
-        return resp.text
+
+        return result.text
 
     except Exception as e:
         print("[STT ERROR]", e)
         return ""
+    
 
 
+# -----------------------------
+# 2) TEXT → SPEECH (OpenAI TTS)
+# -----------------------------
 async def synthesize_tts(text: str) -> bytes:
     """
-    Convert text to speech using ElevenLabs API.
+    Convert text to speech using OpenAI TTS.
+    Model: gpt-4o-mini-tts
+    Returns audio in MP3 bytes.
     """
-    if not ELEVENLABS_API_KEY:
+    if not OPENAI_API_KEY:
+        print("OPENAI_API_KEY missing")
         return b""
 
     try:
-        import requests
+        response = client.audio.speech.create(
+            model="gpt-4o-mini-tts",
+            voice="alloy",      # natural and stable voice
+            input=text,
+            format="mp3"
+        )
 
-        url = "https://api.elevenlabs.io/v1/text-to-speech/default"
-        headers = {
-            "xi-api-key": ELEVENLABS_API_KEY,
-            "Content-Type": "application/json"
-        }
-        payload = {"text": text}
-
-        r = requests.post(url, json=payload, headers=headers)
-
-        if r.status_code == 200:
-            return r.content
+        audio_bytes = response.read()  # binary MP3
+        return audio_bytes
 
     except Exception as e:
         print("[TTS ERROR]", e)
-
-    return b""
+        return b""
