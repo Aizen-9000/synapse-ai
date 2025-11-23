@@ -22,7 +22,7 @@ async def transcribe_audio_file(file_bytes: bytes) -> str:
 
         resp = client.audio.transcriptions.create(
             model="whisper-1",
-            file=("audio.webm", audio, "audio/webm")
+            file=("audio.wav", audio, "audio/wav")
         )
 
         print("[WHISPER RAW RESPONSE]", resp)
