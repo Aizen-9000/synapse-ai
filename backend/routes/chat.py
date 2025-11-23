@@ -42,15 +42,11 @@ async def translate_text(payload: dict = Body(...)):
 async def stt_endpoint(file: UploadFile = File(...)):
     try:
         file_bytes = await file.read()
-        if not file_bytes:
-            return {"text": "[ERROR] No audio received"}
         text = await transcribe_audio_file(file_bytes)
         return {"text": text}
     except Exception as e:
-        # Print full traceback
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(500, f"STT error: {str(e)}")
+        raise HTTPException(500,f"STT error: {str(e)}")
+
 @router.post("/tts")
 async def tts_endpoint(payload: dict = Body(...)):
     text = payload.get("text")

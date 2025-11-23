@@ -4,7 +4,14 @@ from backend.routes.chat import router as chat_router
 
 app = FastAPI(title="Synapse.AI Backend")
 
-origins = ["http://localhost","http://localhost:1420","tauri://localhost","http://127.0.0.1:1420","http://localhost:3000","*"]
+origins = [
+    "http://localhost",
+    "http://localhost:1420",
+    "tauri://localhost",
+    "http://127.0.0.1:1420",
+    "http://localhost:3000",
+    "*"
+]
 
 app.add_middleware(
     CORSMiddleware,
@@ -18,4 +25,4 @@ app.include_router(chat_router)
 
 @app.get("/")
 def root():
-    return {"status":"Synapse.AI backend running","message":"Use /chat, /chat/stt, /chat/tts, /chat/translate"}
+    return {"status": "Synapse.AI backend running", "message": "Use /chat, /chat/stt, /chat/tts, /chat/translate"}
