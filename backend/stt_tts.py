@@ -1,5 +1,6 @@
 import io
 import os
+import ffmpeg
 from openai import OpenAI
 from dotenv import load_dotenv
 import requests
@@ -13,19 +14,25 @@ client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
 
 async def transcribe_audio_file(file_bytes: bytes) -> str:
-    if not OPENAI_API_KEY:
-        print("[STT] No API key")
-        return ""
-
     try:
-        audio = io.BytesIO(file_bytes)
-
-        resp = client.audio.transcriptions.create(
-            model="whisper-1",
-            file=("audio.wav", audio, "audio/wav")
+        # Convert WEBM → WAV using ffmpeg
+        wav_bytes = io.BytesIO()
+        (
+            ffmpeg
+            .input('pipe:', format='webm')
+            .output('pipe:', format='wav')
+            .run(input=file_bytes, stdout=wav_bytes, quiet=True)
         )
 
-        print("[WHISPER RAW RESPONSE]", resp)
+        wav_bytes.seek(0)
+
+        # Send WAV to Whisper
+        resp = client.audio.transcriptions.create(
+            model="whisper-1",
+            file=("audio.wav", wav_bytes, "audio/wav")
+        )
+
+        print("WHISPER RAW:", resp)
         return resp.text or ""
 
     except Exception as e:
